@@ -6,20 +6,20 @@
     <title>設備管理系統 - 幹部登入</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 flex items-center justify-center h-screen">
-    <div class="bg-gray-800 p-10 rounded-2xl shadow-2xl w-[400px] border border-gray-700">
-        <div class="text-4xl mb-4 text-center">🔐</div>
-        <h1 class="text-2xl font-bold text-white text-center mb-8">設備部管理後台</h1>
+<body class="bg-gray-900 flex items-center justify-center h-screen font-sans">
+    <div class="bg-gray-800 p-10 rounded-3xl shadow-2xl w-[420px] border border-gray-700">
+        <div class="text-5xl mb-6 text-center">🔐</div>
+        <h1 class="text-2xl font-bold text-white text-center mb-2">設備部管理後台</h1>
+        <p class="text-gray-400 text-center mb-8 text-sm">請輸入您的管理代號以進入系統</p>
         
         <div class="space-y-6">
             <div>
-                <label class="block text-gray-400 text-sm mb-2">幹部代號</label>
-                <input type="password" id="adminCode" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="請輸入管理代號">
+                <label class="block text-gray-400 text-xs font-bold mb-2 uppercase tracking-widest">幹部代號</label>
+                <input type="password" id="adminCode" class="w-full px-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition text-center text-xl tracking-[1em]" placeholder="••••">
             </div>
-            <button onclick="adminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition duration-200">
-                登入系統
+            <button onclick="adminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition duration-200 transform active:scale-95">
+                進入管理系統
             </button>
-
         </div>
     </div>
 
@@ -45,7 +45,7 @@
                     alert("登入失敗：" + data.訊息);
                 }
             })
-            .catch(err => alert("後端連線異常"));
+            .catch(err => alert("後端 API 連線異常，請確認 Cloud Run 是否正常。"));
         }
     </script>
 </body>
