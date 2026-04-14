@@ -175,35 +175,39 @@
     const pendingIds = [];
     const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
     
-    // 🌟 修正點：使用更精準的方式抓取「目前畫面上看得見」且「待審核」的 ID
+    // 1. 抓取目前畫面上看得見且待審核的 ID
     for (let row of rows) {
-        // 只要 display 不是 none，且內容包含「待審核」就抓取
         const isVisible = row.style.display !== "none";
         const isPending = row.innerText.includes("待審核");
         
         if (isVisible && isPending) {
-            // 從第一欄抓取 ID (#22 -> 22)
-            const tid = row.cells[0].innerText.replace('#', '').trim();
+            // 🌟 更強大的 ID 抓取邏輯：只抓數字，排除掉 # 號和空白
+            const idText = row.cells[0].innerText; 
+            const tid = idText.replace(/[^0-9]/g, '').trim(); // 移除非數字的所有字元
             if(tid) pendingIds.push(tid);
         }
     }
 
-    // 偵錯用：如果還是沒反應，取消註解下一行看看彈窗顯示幾筆
-    // alert("準備處理筆數：" + pendingIds.length);
+    // --- 偵錯區：如果點了沒反應，請按 F12 打開 Console 看看這行有沒有印出數字 ---
+    console.log("準備處理的 ID 清單:", pendingIds);
 
-    if (pendingIds.length === 0) return alert("目前畫面上沒有可操作的申請件！");
+    if (pendingIds.length === 0) {
+        alert("畫面上沒有可操作的申請！");
+        return;
+    }
     
-    if (!confirm(`部長請確認：\n\n您即將針對目前畫面上「${pendingIds.length} 筆」申請執行『${action}』。\n確定執行嗎？`)) return;
+    if (!confirm(`確認要針對這 ${pendingIds.length} 筆申請執行「${action}」嗎？`)) return;
 
     const adminName = localStorage.getItem('adminName');
-    // 根據動作選擇按鈕變更狀態
     const btnId = action === '核准' ? 'btnFilterApprove' : 'btnFilterReject';
     const btn = document.getElementById(btnId);
+    
+    // 防止重複點擊
+    btn.disabled = true;
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
     const originalText = btn.innerText;
 
-    btn.classList.add('btn-loading');
     let success = 0;
-
     for (let i = 0; i < pendingIds.length; i++) {
         btn.innerText = `⏳ (${i+1}/${pendingIds.length})`;
         try {
@@ -219,12 +223,20 @@
             const data = await res.json();
             if (data.成功) success++;
             
-            // 🛑 重要：給予 API 呼吸時間，防止 429 錯誤
+            // 延遲 600ms 保護 Google Sheets API
             await new Promise(r => setTimeout(r, 600)); 
         } catch (e) {
-            console.error("處理 TID " + pendingIds[i] + " 失敗", e);
+            console.error(`編號 ${pendingIds[i]} 處理異常`, e);
         }
     }
+
+    alert(`✅ 批量處理完成！\n成功：${success} 筆\n失敗：${pendingIds.length - success} 筆`);
+    btn.innerText = originalText;
+    btn.disabled = false;
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    
+    loadTransactions(); // 處理完畢自動刷清單
+}
 
     alert(`✅ 批量處理完成！成功：${success} 件`);
     btn.innerText = originalText;
