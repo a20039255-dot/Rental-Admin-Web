@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>設備部點收系統</title>
+    <title>設備部點收與審核系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -12,13 +12,13 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <nav class="bg-gray-800 text-white p-4 shadow-xl border-b border-gray-700">
+    <nav class="bg-gray-800 text-white p-4 shadow-xl">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <h1 class="font-bold text-xl flex items-center">
-                <span class="bg-indigo-600 p-1.5 rounded-lg mr-3 shadow-inner">🛠️</span>
-                設備部管理系統 <span class="ml-3 px-3 py-1 bg-gray-700 rounded-full text-xs text-indigo-300 border border-gray-600 font-mono" id="adminTag"></span>
+                <span class="bg-blue-600 p-1.5 rounded-lg mr-3 shadow-md">🛠️</span>
+                設備部管理系統 <span class="ml-3 px-3 py-1 bg-gray-700 rounded-full text-xs text-blue-300 border border-gray-600 font-mono" id="adminTag"></span>
             </h1>
-            <button onclick="logout()" class="text-gray-400 hover:text-red-400 transition font-bold">登出系統</button>
+            <button onclick="logout()" class="text-gray-400 hover:text-white transition font-bold">登出系統</button>
         </div>
     </nav>
 
@@ -26,20 +26,20 @@
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <h3 class="text-xs font-black text-gray-400 mb-3 uppercase tracking-[0.2em]">快速過濾紀錄</h3>
+                <h3 class="text-xs font-black text-gray-400 mb-3 uppercase tracking-widest">快速過濾</h3>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">🔍</span>
-                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="輸入學號、姓名、設備名稱進行快速搜尋..." 
-                        class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition bg-gray-50 focus:bg-white">
+                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋學號、姓名、設備或狀態(待審核)..." 
+                        class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white">
                 </div>
             </div>
 
-            <div class="bg-indigo-900 p-6 rounded-2xl shadow-lg border border-indigo-800 text-white">
-                <h3 class="text-xs font-black text-indigo-300 mb-3 uppercase tracking-[0.2em]">學號批量點收</h3>
+            <div class="bg-gray-900 p-6 rounded-2xl shadow-lg text-white">
+                <h3 class="text-xs font-black text-gray-400 mb-3 uppercase tracking-widest">學號批量點收</h3>
                 <div class="flex gap-2">
                     <input type="text" id="batchSid" placeholder="輸入學號..." 
-                        class="flex-1 px-4 py-3 bg-indigo-800 border border-indigo-700 rounded-xl focus:ring-2 focus:ring-white outline-none font-mono text-white placeholder-indigo-400">
-                    <button onclick="batchReturn()" id="batchBtn" class="bg-white hover:bg-indigo-100 text-indigo-900 px-6 py-3 rounded-xl font-black shadow-md transition transform active:scale-95">
+                        class="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-white">
+                    <button onclick="batchReturn()" id="batchBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-black shadow-md transition active:scale-95">
                         全歸還
                     </button>
                 </div>
@@ -49,24 +49,24 @@
         <div class="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div>
-                    <h2 class="text-xl font-bold text-gray-800">目前借用中清單</h2>
-                    <p class="text-xs text-gray-400 mt-1">即時對接 Google Sheets 雲端資料庫</p>
+                    <h2 class="text-xl font-bold text-gray-800 uppercase tracking-tight">紀錄管理清單</h2>
+                    <p class="text-xs text-gray-400 mt-1">包含：待審核申請、借用中項目</p>
                 </div>
-                <button onclick="loadTransactions()" class="flex items-center gap-2 bg-white border border-gray-200 px-5 py-2 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition shadow-sm active:scale-95">
-                    <span id="refreshIcon" class="inline-block">🔄</span> 重新整理
+                <button onclick="loadTransactions()" class="flex items-center gap-2 bg-white border border-gray-200 px-5 py-2 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition shadow-sm">
+                    <span id="refreshIcon">🔄</span> 重新整理
                 </button>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="text-gray-400 text-[10px] uppercase tracking-[0.2em] border-b">
-                            <th class="p-6 font-black">ID</th>
-                            <th class="p-6 font-black">借用人資訊</th>
+                        <tr class="text-gray-400 text-[10px] uppercase tracking-widest border-b">
+                            <th class="p-6 font-black">交易編號</th>
+                            <th class="p-6 font-black">申請人</th>
                             <th class="p-6 font-black">設備品項</th>
-                            <th class="p-6 font-black">借用時間</th>
+                            <th class="p-6 font-black">時間/進度</th>
                             <th class="p-6 font-black text-center">狀態</th>
-                            <th class="p-6 font-black text-right">操作</th>
+                            <th class="p-6 font-black text-right">管理操作</th>
                         </tr>
                     </thead>
                     <tbody id="transactionTable" class="divide-y divide-gray-100">
@@ -75,8 +75,8 @@
             </div>
             
             <div id="noData" class="hidden p-24 text-center">
-                <div class="text-6xl mb-6">🍃</div>
-                <p class="text-gray-400 font-bold text-lg">目前清爽無比，沒有人欠東西不還！</p>
+                <div class="text-6xl mb-6">☕</div>
+                <p class="text-gray-400 font-bold text-lg">目前沒有待處理的申請或借用紀錄</p>
             </div>
         </div>
     </div>
@@ -91,21 +91,20 @@
             loadTransactions();
         };
 
-        // 1. 載入借用清單
         function loadTransactions() {
             const table = document.getElementById('transactionTable');
             const noData = document.getElementById('noData');
             const refreshIcon = document.getElementById('refreshIcon');
             
             refreshIcon.classList.add('animate-spin');
-            table.innerHTML = '<tr><td colspan="6" class="p-20 text-center text-gray-300 font-medium">📡 正在同步雲端紀錄中...</td></tr>';
+            table.innerHTML = '<tr><td colspan="6" class="p-20 text-center text-gray-300">📡 同步雲端數據中...</td></tr>';
 
             fetch(`${API_URL}/transactions`)
                 .then(res => res.json())
                 .then(data => {
                     refreshIcon.classList.remove('animate-spin');
                     table.innerHTML = '';
-                    const list = Object.values(data);
+                    const list = Object.values(data).sort((a, b) => b.交易編號 - a.交易編號);
                     
                     if(list.length === 0) {
                         noData.classList.remove('hidden');
@@ -114,33 +113,36 @@
 
                     noData.classList.add('hidden');
                     list.forEach(t => {
+                        const isPending = t.狀態 === "待審核";
                         const tr = document.createElement('tr');
-                        tr.className = "hover:bg-indigo-50/50 transition duration-150";
+                        tr.className = isPending ? "bg-amber-50/30 transition" : "hover:bg-gray-50 transition";
+                        
                         tr.innerHTML = `
-                            <td class="p-6 font-mono text-xs text-gray-300">#${t.交易編號}</td>
+                            <td class="p-6 font-mono text-xs text-gray-400">#${t.交易編號}</td>
                             <td class="p-6">
                                 <div class="font-bold text-gray-800">${t.租借人員姓名}</div>
-                                <div class="text-[10px] text-gray-400 font-mono tracking-tighter">${t.租借人員學號}</div>
+                                <div class="text-[10px] text-gray-400 font-mono">${t.租借人員學號}</div>
                             </td>
                             <td class="p-6">
-                                <span class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-black border border-indigo-100 shadow-sm">
+                                <span class="bg-white border px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
                                     ${t.設備名稱}
                                 </span>
                             </td>
                             <td class="p-6">
-                                <div class="text-xs text-gray-600 font-medium">${t.借用時間}</div>
-                                <div class="text-[10px] text-gray-400 mt-1 italic">已借用 ${t.已借用天數} 天</div>
+                                <div class="text-[11px] text-gray-500">${t.借用時間}</div>
+                                ${!isPending ? `<div class="text-[10px] text-blue-500 mt-1 font-bold italic">已借用 ${t.已借用天數} 天</div>` : ''}
                             </td>
                             <td class="p-6 text-center">
-                                <span class="px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${t.是否過期 ? 'bg-red-500 text-white shadow-lg animate-pulse' : 'bg-green-100 text-green-700'}">
-                                    ${t.是否過期 ? '⚠️ 已逾期' : 'OK 借用中'}
+                                <span class="px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${isPending ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-green-100 text-green-700'}">
+                                    ${t.狀態}
                                 </span>
                             </td>
-                            <td class="p-6 text-right">
-                                <button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" 
-                                    class="bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 px-5 py-2.5 rounded-xl text-xs font-black shadow-sm transition-all active:scale-95">
-                                    點收歸還
-                                </button>
+                            <td class="p-6 text-right space-x-2">
+                                ${isPending ? 
+                                    `<button onclick="processApprove(${t.交易編號}, '核准')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition">核准</button>
+                                     <button onclick="processApprove(${t.交易編號}, '駁回')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition">駁回</button>` :
+                                    `<button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition">點收歸還</button>`
+                                }
                             </td>
                         `;
                         table.appendChild(tr);
@@ -148,16 +150,33 @@
                 })
                 .catch(err => {
                     refreshIcon.classList.remove('animate-spin');
-                    table.innerHTML = `<tr><td colspan="6" class="p-20 text-center text-red-400 font-bold">無法連線至 Cloud Run 後端 API</td></tr>`;
+                    table.innerHTML = `<tr><td colspan="6" class="p-20 text-center text-red-400 font-bold">API 連線失敗</td></tr>`;
                 });
         }
 
-        // 2. 單筆點收
-        function returnItem(tid, name) {
-            if(!confirm(`確認點收「${name}」並歸還至試算表？`)) return;
-
+        // 🌟 核心功能：審核 (核准/駁回)
+        function processApprove(tid, action) {
+            if(!confirm(`確定要「${action}」這筆編號 #${tid} 的申請嗎？`)) return;
             const adminName = localStorage.getItem('adminName');
             
+            fetch(`${API_URL}/admin/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "交易編號": tid, "動作": action, "點收幹部": adminName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.成功) {
+                    loadTransactions(); 
+                } else {
+                    alert("處理失敗：" + data.訊息);
+                }
+            });
+        }
+
+        function returnItem(tid, name) {
+            if(!confirm(`點收「${name}」？將增加庫存並完成紀錄。`)) return;
+            const adminName = localStorage.getItem('adminName');
             fetch(`${API_URL}/return`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -165,25 +184,15 @@
             })
             .then(res => res.json())
             .then(data => {
-                if(data.成功) {
-                    loadTransactions(); 
-                } else {
-                    alert("歸還失敗：" + data.訊息);
-                }
+                if(data.成功) loadTransactions();
             });
         }
 
-        // 3. 批量點收
         function batchReturn() {
             const sid = document.getElementById('batchSid').value.trim();
             const adminName = localStorage.getItem('adminName');
-            const btn = document.getElementById('batchBtn');
-
             if (!sid) return alert("請輸入學號");
-            if (!confirm(`確定要將學號「${sid}」的所有設備一併歸還嗎？`)) return;
-
-            btn.innerText = "⏳ 處理中";
-            btn.disabled = true;
+            if (!confirm(`將歸還學號「${sid}」名下所有借用中設備？`)) return;
 
             fetch(`${API_URL}/return_by_student`, {
                 method: 'POST',
@@ -193,20 +202,13 @@
             .then(res => res.json())
             .then(data => {
                 if (data.成功) {
-                    alert(`✅ 批量處理完成！共歸還 ${data.歸還數量} 項設備。`);
+                    alert(`✅ 處理完成，歸還了 ${data.歸還數量} 項。`);
                     document.getElementById('batchSid').value = '';
                     loadTransactions();
-                } else {
-                    alert("處理失敗：" + data.訊息);
                 }
-            })
-            .finally(() => {
-                btn.innerText = "全歸還";
-                btn.disabled = false;
             });
         }
 
-        // 4. 關鍵字過濾
         function filterTable() {
             const input = document.getElementById("searchInput").value.toUpperCase();
             const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
@@ -220,45 +222,6 @@
             localStorage.clear();
             window.location.href = 'index.html';
         }
-        // 修改渲染列表的邏輯
-function renderTable(list) {
-    const table = document.getElementById('transactionTable');
-    table.innerHTML = '';
-    
-    list.forEach(t => {
-        const isPending = t.狀態 === "待審核";
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="p-4">${t.交易編號}</td>
-            <td class="p-4">${t.租借人員姓名}</td>
-            <td class="p-4 font-bold text-blue-600">${t.設備名稱}</td>
-            <td class="p-4">
-                ${isPending ? 
-                    `<button onclick="processApprove(${t.交易編號}, '核准')" class="bg-green-500 text-white px-3 py-1 rounded mr-2">核准</button>
-                     <button onclick="processApprove(${t.交易編號}, '駁回')" class="bg-red-500 text-white px-3 py-1 rounded">駁回</button>` :
-                    `<button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" class="bg-indigo-500 text-white px-3 py-1 rounded">點收歸還</button>`
-                }
-            </td>
-        `;
-        table.appendChild(tr);
-    });
-}
-
-function processApprove(tid, action) {
-    const adminName = localStorage.getItem('adminName');
-    fetch(`${API_URL}/admin/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ "交易編號": tid, "動作": action, "點收幹部": adminName })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.成功) {
-            alert(`已完成${action}！`);
-            loadTransactions();
-        }
-    });
-}
     </script>
 </body>
 </html>
