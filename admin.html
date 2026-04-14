@@ -238,7 +238,7 @@
 
        function batchReturn() {
     const sid = document.getElementById('batchSid').value.trim();
-    if (sid.length < 3) return alert("部長，請輸入學號末三碼！");
+    if (sid.length < 3) return alert("請輸入學號末三碼！");
     
     const adminName = localStorage.getItem('adminName');
     if (!confirm(`確定要歸還學號末三碼為 "${sid}" 的所有設備嗎？`)) return;
