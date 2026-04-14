@@ -22,7 +22,19 @@
             </div>
 
             <div class="mb-6">
-                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋學號或姓名..." class="w-full md:w-64 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋學號或姓名..." class="w-full md:w-64 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"><div class="mb-6 flex flex-col md:flex-row gap-4 items-end">
+    <div class="flex-1">
+        <label class="block text-sm text-gray-500 mb-1">搜尋學生</label>
+        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="輸入學號或姓名搜尋..." class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+    </div>
+    
+    <div class="flex gap-2">
+        <input type="text" id="batchSid" placeholder="輸入學號一次歸還" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-48">
+        <button onclick="batchReturn()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow transition">
+            學號批量歸還
+        </button>
+    </div>
+</div>
             </div>
 
             <div class="overflow-x-auto">
@@ -129,6 +141,51 @@
                 const text = rows[i].innerText.toUpperCase();
                 rows[i].style.display = text.indexOf(input) > -1 ? "" : "none";
             }
+        }
+        // 🚀 依學號批量歸還功能
+        function batchReturn() {
+            const sid = document.getElementById('batchSid').value.trim();
+            const adminName = localStorage.getItem('adminName');
+
+            if (!sid) {
+                alert("請先輸入學號！");
+                return;
+            }
+
+            if (!confirm(`確定要將學號「${sid}」名下的所有設備一次歸還嗎？`)) return;
+
+            // 顯示讀取中，防止重複點擊
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ 處理中...";
+            btn.disabled = true;
+
+            fetch(`${API_URL}/return_by_student`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    "學號": sid,
+                    "點收幹部": adminName
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.成功) {
+                    alert(`✅ 批量歸還成功！\n共處理了 ${data.歸還數量} 筆借用紀錄。`);
+                    document.getElementById('batchSid').value = ''; // 清空輸入框
+                    loadTransactions(); // 刷新表格
+                } else {
+                    alert("❌ 歸還失敗：" + data.訊息);
+                }
+            })
+            .catch(err => {
+                console.error("批量歸還出錯:", err);
+                alert("連線異常，請檢查後端狀態");
+            })
+            .finally(() => {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            });
         }
     </script>
 </body>
