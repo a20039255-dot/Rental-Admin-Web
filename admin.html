@@ -220,6 +220,45 @@
             localStorage.clear();
             window.location.href = 'index.html';
         }
+        // 修改渲染列表的邏輯
+function renderTable(list) {
+    const table = document.getElementById('transactionTable');
+    table.innerHTML = '';
+    
+    list.forEach(t => {
+        const isPending = t.狀態 === "待審核";
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="p-4">${t.交易編號}</td>
+            <td class="p-4">${t.租借人員姓名}</td>
+            <td class="p-4 font-bold text-blue-600">${t.設備名稱}</td>
+            <td class="p-4">
+                ${isPending ? 
+                    `<button onclick="processApprove(${t.交易編號}, '核准')" class="bg-green-500 text-white px-3 py-1 rounded mr-2">核准</button>
+                     <button onclick="processApprove(${t.交易編號}, '駁回')" class="bg-red-500 text-white px-3 py-1 rounded">駁回</button>` :
+                    `<button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" class="bg-indigo-500 text-white px-3 py-1 rounded">點收歸還</button>`
+                }
+            </td>
+        `;
+        table.appendChild(tr);
+    });
+}
+
+function processApprove(tid, action) {
+    const adminName = localStorage.getItem('adminName');
+    fetch(`${API_URL}/admin/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ "交易編號": tid, "動作": action, "點收幹部": adminName })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.成功) {
+            alert(`已完成${action}！`);
+            loadTransactions();
+        }
+    });
+}
     </script>
 </body>
 </html>
