@@ -159,17 +159,30 @@
 
         // 2. 搜尋與計數
         function filterTable() {
-            const input = document.getElementById("searchInput").value.toUpperCase();
-            const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
-            let pendingCount = 0;
-            for (let i = 0; i < rows.length; i++) {
-                const isMatch = rows[i].innerText.toUpperCase().includes(input);
-                const isPending = rows[i].innerText.includes("待審核");
-                rows[i].style.display = isMatch ? "" : "none";
-                if (isMatch && isPending) pendingCount++;
-            }
-            document.getElementById('filteredCount').innerText = pendingCount;
+    const input = document.getElementById("searchInput").value.toUpperCase();
+    const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
+    let pendingCount = 0;
+    
+    for (let i = 0; i < rows.length; i++) {
+        // 🌟 改進點：我們只抓取「借用人資訊」這一欄的文字 (通常是 cells[1])
+        // 這樣就不會因為 ID 是 #15 而誤抓了
+        const userInfoText = rows[i].cells[1] ? rows[i].cells[1].innerText.toUpperCase() : "";
+        const equipNameText = rows[i].cells[2] ? rows[i].cells[2].innerText.toUpperCase() : "";
+        
+        // 只要 姓名資訊 或 設備名稱 包含輸入的關鍵字就顯示
+        const isMatch = userInfoText.includes(input) || equipNameText.includes(input);
+        const isPending = rows[i].innerText.includes("待審核");
+        
+        rows[i].style.display = isMatch ? "" : "none";
+        
+        if (isMatch && isPending) {
+            pendingCount++;
         }
+    }
+    
+    // 更新上方數字顯示
+    document.getElementById('filteredCount').innerText = pendingCount;
+}
 
         // 3. 🌟 精準批量處理 (修正暴力抓取 ID)
         async function processFiltered(action) {
