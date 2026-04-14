@@ -3,33 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>設備部 - 管理後台</title>
+    <title>設備部點收系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-gray-800 text-white p-4 shadow-xl">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="font-bold text-xl flex items-center">🛠️ 設備部後台 <span class="ml-3 px-2 py-1 bg-gray-700 rounded text-xs" id="adminTag"></span></h1>
+            <button onclick="location.href='index.html'" class="text-gray-400 hover:text-white">登出</button>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto p-6">
+        <div class="bg-white rounded-2xl shadow-sm p-8">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">目前借用中清單</h2>
+                <button onclick="loadTransactions()" class="text-blue-500 hover:rotate-180 transition duration-500">🔄 重新整理</button>
+            </div>
+
+            <div class="mb-6">
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋學號或姓名..." class="w-full md:w-64 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b">
+                            <th class="p-4 font-bold text-gray-600">交易編號</th>
+                            <th class="p-4 font-bold text-gray-600">借用人</th>
+                            <th class="p-4 font-bold text-gray-600">設備名稱</th>
+                            <th class="p-4 font-bold text-gray-600">借用時間</th>
+                            <th class="p-4 font-bold text-gray-600">狀態</th>
+                            <th class="p-4 font-bold text-gray-600">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionTable" class="divide-y">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // 🌟 幹部後台一樣共用這個後端大腦網址
         const API_URL = "https://student-api-174932950003.asia-east1.run.app";
 
         window.onload = function() {
-            loadAdminData();
+            const name = localStorage.getItem('adminName');
+            if(!name) window.location.href = 'index.html';
+            document.getElementById('adminTag').innerText = name;
+            loadTransactions();
         };
 
-        function loadAdminData() {
-            // 這裡放你原本去抓取「借用紀錄」或「管理清單」的 fetch 邏輯
-            // 寫法與前台完全一樣，記得加上 console.log 方便未來除錯
-            console.log("👉 設備部後台準備請求資料...");
-            
-            fetch(`${API_URL}/equipments`) // 或其他你設定的後台 API 路徑
-                .then(response => response.json())
+        function loadTransactions() {
+            const table = document.getElementById('transactionTable');
+            table.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-400 animate-pulse">📡 正在從雲端抓取紀錄...</td></tr>';
+
+            fetch(`${API_URL}/transactions`)
+                .then(res => res.json())
                 .then(data => {
-                    console.log("✅ 後台資料讀取成功");
-                    // 渲染後台畫面
-                })
-                .catch(error => {
-                    console.error("❌ 後台連線失敗：", error);
+                    table.innerHTML = '';
+                    // 後端傳回來的 data 是個字典，我們轉成陣列來處理
+                    const list = Object.values(data);
+                    
+                    if(list.length === 0) {
+                        table.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-400">目前沒有任何借用紀錄</td></tr>';
+                        return;
+                    }
+
+                    list.forEach(t => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-gray-50 transition";
+                        tr.innerHTML = `
+                            <td class="p-4 font-mono text-sm">${t.交易編號}</td>
+                            <td class="p-4">
+                                <div class="font-bold">${t.租借人員姓名}</div>
+                                <div class="text-xs text-gray-400">${t.租借人員學號}</div>
+                            </td>
+                            <td class="p-4 text-blue-600 font-medium">${t.設備名稱}</td>
+                            <td class="p-4 text-sm text-gray-500">${t.借用時間}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-1 rounded-full text-xs ${t.是否過期 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
+                                    ${t.是否過期 ? '已逾期' : '借用中'}
+                                </span>
+                            </td>
+                            <td class="p-4">
+                                <button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition">
+                                    點收歸還
+                                </button>
+                            </td>
+                        `;
+                        table.appendChild(tr);
+                    });
                 });
+        }
+
+        function returnItem(tid, name) {
+            if(!confirm(`確定要歸還「${name}」嗎？\n歸還後試算表庫存將自動 +1。`)) return;
+
+            const adminName = localStorage.getItem('adminName');
+            
+            fetch(`${API_URL}/return`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    "交易編號": tid,
+                    "點收幹部": adminName
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.成功) {
+                    alert("✅ 歸還成功！");
+                    loadTransactions(); // 重新整理表格
+                } else {
+                    alert("❌ 歸還失敗：" + data.訊息);
+                }
+            })
+            .catch(err => alert("連線錯誤"));
+        }
+
+        function filterTable() {
+            const input = document.getElementById("searchInput").value.toUpperCase();
+            const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
+            for (let i = 0; i < rows.length; i++) {
+                const text = rows[i].innerText.toUpperCase();
+                rows[i].style.display = text.indexOf(input) > -1 ? "" : "none";
+            }
         }
     </script>
 </body>
