@@ -150,61 +150,87 @@
 
         // 2. 🌟 核心：搜尋過濾與即時計數
         function filterTable() {
-            const input = document.getElementById("searchInput").value.toUpperCase();
-            const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
-            let pendingCount = 0;
-            
-            for (let i = 0; i < rows.length; i++) {
-                const text = rows[i].innerText.toUpperCase();
-                const isMatch = text.includes(input);
-                const isPending = rows[i].innerText.includes("待審核");
-                
-                rows[i].style.display = isMatch ? "" : "none";
-                if (isMatch && isPending) pendingCount++;
-            }
-            document.getElementById('filteredCount').innerText = pendingCount;
+    const input = document.getElementById("searchInput").value.toUpperCase();
+    const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
+    let pendingCount = 0;
+    
+    for (let i = 0; i < rows.length; i++) {
+        const text = rows[i].innerText.toUpperCase();
+        // 只要這列的內容包含搜尋關鍵字
+        const isMatch = text.includes(input);
+        const isPending = rows[i].innerText.includes("待審核");
+        
+        // 🌟 這裡必須確實設定 display
+        rows[i].style.display = isMatch ? "" : "none";
+        
+        if (isMatch && isPending) {
+            pendingCount++;
         }
-
+    }
+    // 更新上方數字顯示
+    document.getElementById('filteredCount').innerText = pendingCount;
+}
         // 3. 🌟 核心：精準批量處理 (只針對搜尋結果)
         async function processFiltered(action) {
-            const pendingIds = [];
-            const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
-            
-            for (let row of rows) {
-                if (row.style.display !== "none" && row.innerText.includes("待審核")) {
-                    const tid = row.cells[0].innerText.replace('#', '');
-                    pendingIds.push(tid);
-                }
-            }
-
-            if (pendingIds.length === 0) return alert("目前畫面上沒有可操作的申請件！");
-            if (!confirm(`確認要針對目前搜尋結果的 ${pendingIds.length} 筆申請執行「${action}」嗎？`)) return;
-
-            const adminName = localStorage.getItem('adminName');
-            const btn = action === '核准' ? document.getElementById('btnFilterApprove') : document.getElementById('btnFilterReject');
-            const originalText = btn.innerText;
-            
-            btn.classList.add('btn-loading');
-            let success = 0;
-
-            for (let i = 0; i < pendingIds.length; i++) {
-                btn.innerText = `⏳ (${i+1}/${pendingIds.length})`;
-                try {
-                    const res = await fetch(`${API_URL}/admin/approve`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ "交易編號": pendingIds[i], "動作": action, "點收幹部": adminName })
-                    });
-                    if ((await res.json()).成功) success++;
-                    await new Promise(r => setTimeout(r, 600)); // 保護 API 間隔
-                } catch (e) {}
-            }
-
-            alert(`✅ 批量處理完成！成功：${success} 件`);
-            btn.innerText = originalText;
-            btn.classList.remove('btn-loading');
-            loadTransactions();
+    const pendingIds = [];
+    const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
+    
+    // 🌟 修正點：使用更精準的方式抓取「目前畫面上看得見」且「待審核」的 ID
+    for (let row of rows) {
+        // 只要 display 不是 none，且內容包含「待審核」就抓取
+        const isVisible = row.style.display !== "none";
+        const isPending = row.innerText.includes("待審核");
+        
+        if (isVisible && isPending) {
+            // 從第一欄抓取 ID (#22 -> 22)
+            const tid = row.cells[0].innerText.replace('#', '').trim();
+            if(tid) pendingIds.push(tid);
         }
+    }
+
+    // 偵錯用：如果還是沒反應，取消註解下一行看看彈窗顯示幾筆
+    // alert("準備處理筆數：" + pendingIds.length);
+
+    if (pendingIds.length === 0) return alert("目前畫面上沒有可操作的申請件！");
+    
+    if (!confirm(`部長請確認：\n\n您即將針對目前畫面上「${pendingIds.length} 筆」申請執行『${action}』。\n確定執行嗎？`)) return;
+
+    const adminName = localStorage.getItem('adminName');
+    // 根據動作選擇按鈕變更狀態
+    const btnId = action === '核准' ? 'btnFilterApprove' : 'btnFilterReject';
+    const btn = document.getElementById(btnId);
+    const originalText = btn.innerText;
+
+    btn.classList.add('btn-loading');
+    let success = 0;
+
+    for (let i = 0; i < pendingIds.length; i++) {
+        btn.innerText = `⏳ (${i+1}/${pendingIds.length})`;
+        try {
+            const res = await fetch(`${API_URL}/admin/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    "交易編號": pendingIds[i], 
+                    "動作": action, 
+                    "點收幹部": adminName 
+                })
+            });
+            const data = await res.json();
+            if (data.成功) success++;
+            
+            // 🛑 重要：給予 API 呼吸時間，防止 429 錯誤
+            await new Promise(r => setTimeout(r, 600)); 
+        } catch (e) {
+            console.error("處理 TID " + pendingIds[i] + " 失敗", e);
+        }
+    }
+
+    alert(`✅ 批量處理完成！成功：${success} 件`);
+    btn.innerText = originalText;
+    btn.classList.remove('btn-loading');
+    loadTransactions(); // 重新載入列表
+}
 
         function processSingle(tid, action) {
             const adminName = localStorage.getItem('adminName');
