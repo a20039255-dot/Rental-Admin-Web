@@ -3,48 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>設備部點收與審核系統 - 終極版</title>
+    <title>設備部管理後台 - 精準自動化版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; }
         .pending-row { border-left: 6px solid #fbbf24; }
-        .btn-loading { pointer-events: none; opacity: 0.6; }
+        .btn-loading { pointer-events: none; opacity: 0.6; cursor: not-allowed; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <nav class="bg-slate-800 text-white p-4 shadow-xl border-b border-slate-700">
+    <nav class="bg-slate-800 text-white p-4 shadow-xl">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <h1 class="font-black text-xl flex items-center tracking-tight">
                 <span class="bg-blue-600 p-2 rounded-xl mr-3 shadow-inner">🛠️</span>
                 設備管理後台 <span class="ml-3 px-3 py-1 bg-slate-700 rounded-full text-[10px] text-blue-300 border border-slate-600 font-mono" id="adminTag">載入中...</span>
             </h1>
-            <div class="flex items-center gap-6">
-                <span id="currentTime" class="hidden md:block text-slate-400 text-xs font-mono"></span>
-                <button onclick="logout()" class="text-slate-400 hover:text-red-400 transition font-bold text-sm">登出系統</button>
-            </div>
+            <button onclick="logout()" class="text-slate-400 hover:text-red-400 transition font-bold text-sm">登出系統</button>
         </div>
     </nav>
 
     <div class="max-w-7xl mx-auto p-4 md:p-8">
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
             <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
-                <h3 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-[0.2em]">快速過濾與批量審核</h3>
+                <h3 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-[0.2em]">精準篩選與批量決策</h3>
                 <div class="relative mb-4">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">🔍</span>
-                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋姓名、學號、單位或設備..." 
-                        class="w-full pl-12 pr-4 py-4 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-sm">
+                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋姓名、學號、單位或電話..." 
+                        class="w-full pl-12 pr-4 py-4 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 text-sm">
                 </div>
                 
-                <div class="flex gap-4">
-                    <button onclick="processAll('核准')" id="btnAllApprove" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl text-xs font-black shadow-md transition transform active:scale-95">
-                        ⚡ 一鍵核准所有待審核
-                    </button>
-                    <button onclick="processAll('駁回')" id="btnAllReject" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl text-xs font-black shadow-md transition transform active:scale-95">
-                        🛑 一鍵駁回所有待審核
-                    </button>
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-between bg-blue-50/50 p-4 rounded-2xl border border-dashed border-blue-200">
+                    <div class="text-xs font-bold text-blue-600">
+                        目前搜尋結果中：<span id="filteredCount" class="text-lg">0</span> 筆待審核
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="processFiltered('核准')" id="btnFilterApprove" class="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-md transition transform active:scale-95">
+                            ✅ 搜尋結果全核准
+                        </button>
+                        <button onclick="processFiltered('駁回')" id="btnFilterReject" class="flex-1 md:flex-none bg-rose-500 hover:bg-rose-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-md transition transform active:scale-95">
+                            ❌ 搜尋結果全駁回
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -52,8 +55,8 @@
                 <h3 class="text-[10px] font-black text-slate-500 mb-3 uppercase tracking-[0.2em]">學號批量點收歸還</h3>
                 <div class="flex gap-2">
                     <input type="text" id="batchSid" placeholder="輸入學號..." 
-                        class="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none font-mono text-white placeholder-slate-500 text-sm">
-                    <button onclick="batchReturn()" id="batchBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-black shadow-lg transition transform active:scale-95 text-xs">
+                        class="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none font-mono text-white text-sm">
+                    <button onclick="batchReturn()" id="batchBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-black shadow-lg transition text-xs">
                         全歸還
                     </button>
                 </div>
@@ -61,13 +64,10 @@
         </div>
 
         <div class="bg-white rounded-[2rem] shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-                <div>
-                    <h2 class="text-lg font-black text-gray-800 tracking-tight">管理清單</h2>
-                    <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">目前顯示所有待審核與借用中項目</p>
-                </div>
+            <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
+                <h2 class="text-lg font-black text-gray-800 tracking-tight">管理清單</h2>
                 <button onclick="loadTransactions()" class="flex items-center gap-2 bg-white border border-gray-200 px-5 py-2.5 rounded-xl text-xs font-black text-gray-600 hover:bg-gray-50 transition shadow-sm active:scale-95">
-                    <span id="refreshIcon" class="inline-block">🔄</span> 重新整理
+                    <span id="refreshIcon">🔄</span> 重新整理
                 </button>
             </div>
 
@@ -75,21 +75,17 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-gray-400 text-[10px] uppercase tracking-[0.2em] border-b">
-                            <th class="p-6 font-black">ID</th>
-                            <th class="p-6 font-black">借用人資訊</th>
-                            <th class="p-6 font-black">設備品項</th>
-                            <th class="p-6 text-center font-black">狀態 / 處理幹部</th>
-                            <th class="p-6 text-right font-black">管理決策</th>
+                            <th class="p-6">ID</th>
+                            <th class="p-6">借用人資訊</th>
+                            <th class="p-6">設備品項</th>
+                            <th class="p-6 text-center">狀態 / 處理幹部</th>
+                            <th class="p-6 text-right">管理決策</th>
                         </tr>
                     </thead>
-                    <tbody id="transactionTable" class="divide-y divide-gray-100">
-                        </tbody>
+                    <tbody id="transactionTable" class="divide-y divide-gray-100"></tbody>
                 </table>
             </div>
-            
-            <div id="noData" class="hidden p-24 text-center">
-                <p class="text-gray-400 font-black text-lg">目前清爽無比，沒有待處理事項</p>
-            </div>
+            <div id="noData" class="hidden p-24 text-center text-gray-400 font-black">目前沒有待處理事項</div>
         </div>
     </div>
 
@@ -101,7 +97,6 @@
             if(!name) return window.location.href = 'index.html';
             document.getElementById('adminTag').innerText = `部長：${name}`;
             loadTransactions();
-            setInterval(() => { document.getElementById('currentTime').innerText = new Date().toLocaleString(); }, 1000);
         };
 
         // 1. 載入紀錄
@@ -109,7 +104,7 @@
             const table = document.getElementById('transactionTable');
             const refreshIcon = document.getElementById('refreshIcon');
             refreshIcon.classList.add('animate-spin');
-            table.innerHTML = '<tr><td colspan="5" class="p-20 text-center text-gray-300 font-bold animate-pulse italic">📡 正在同步雲端大腦...</td></tr>';
+            table.innerHTML = '<tr><td colspan="5" class="p-20 text-center text-gray-300 font-bold animate-pulse">📡 同步雲端大腦中...</td></tr>';
 
             fetch(`${API_URL}/transactions`)
                 .then(res => res.json())
@@ -123,7 +118,7 @@
                     list.forEach(t => {
                         const isPending = t.狀態 === "待審核";
                         const tr = document.createElement('tr');
-                        tr.className = isPending ? "pending-row bg-amber-50/40 transition duration-300" : "hover:bg-gray-50 transition duration-150";
+                        tr.className = isPending ? "pending-row bg-amber-50/40 transition" : "hover:bg-gray-50 transition";
                         
                         tr.innerHTML = `
                             <td class="p-6 font-mono text-xs text-gray-300">#${t.交易編號}</td>
@@ -142,48 +137,66 @@
                             </td>
                             <td class="p-6 text-right space-x-2">
                                 ${isPending ? 
-                                    `<button onclick="processSingle(${t.交易編號}, '核准')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg transition transform active:scale-90">核准</button>
-                                     <button onclick="processSingle(${t.交易編號}, '駁回')" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg transition transform active:scale-90">駁回</button>` :
-                                    `<button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-[10px] font-black shadow-lg transition transform active:scale-90">點收歸還</button>`
+                                    `<button onclick="processSingle(${t.交易編號}, '核准')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg">核准</button>
+                                     <button onclick="processSingle(${t.交易編號}, '駁回')" class="bg-rose-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg">駁回</button>` :
+                                    `<button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-[10px] font-black shadow-lg">點收歸還</button>`
                                 }
                             </td>`;
                         table.appendChild(tr);
                     });
+                    filterTable(); // 重新計算過濾數量
                 });
         }
 
-        // 2. 🌟 終極：一鍵處理所有申請 (批量序列化)
-        async function processAll(action) {
+        // 2. 🌟 核心：搜尋過濾與即時計數
+        function filterTable() {
+            const input = document.getElementById("searchInput").value.toUpperCase();
+            const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
+            let pendingCount = 0;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const text = rows[i].innerText.toUpperCase();
+                const isMatch = text.includes(input);
+                const isPending = rows[i].innerText.includes("待審核");
+                
+                rows[i].style.display = isMatch ? "" : "none";
+                if (isMatch && isPending) pendingCount++;
+            }
+            document.getElementById('filteredCount').innerText = pendingCount;
+        }
+
+        // 3. 🌟 核心：精準批量處理 (只針對搜尋結果)
+        async function processFiltered(action) {
             const pendingIds = [];
             const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
+            
             for (let row of rows) {
-                if (row.innerText.includes("待審核")) {
+                if (row.style.display !== "none" && row.innerText.includes("待審核")) {
                     const tid = row.cells[0].innerText.replace('#', '');
                     pendingIds.push(tid);
                 }
             }
 
-            if (pendingIds.length === 0) return alert("目前沒有任何待審核的申請！");
-            if (!confirm(`部長請確認：您即將一鍵「${action}」共 ${pendingIds.length} 件申請。是否執行？`)) return;
+            if (pendingIds.length === 0) return alert("目前畫面上沒有可操作的申請件！");
+            if (!confirm(`確認要針對目前搜尋結果的 ${pendingIds.length} 筆申請執行「${action}」嗎？`)) return;
 
             const adminName = localStorage.getItem('adminName');
-            const btn = action === '核准' ? document.getElementById('btnAllApprove') : document.getElementById('btnAllReject');
+            const btn = action === '核准' ? document.getElementById('btnFilterApprove') : document.getElementById('btnFilterReject');
             const originalText = btn.innerText;
             
             btn.classList.add('btn-loading');
             let success = 0;
 
             for (let i = 0; i < pendingIds.length; i++) {
-                btn.innerText = `⏳ 正在處理 (${i+1}/${pendingIds.length})`;
+                btn.innerText = `⏳ (${i+1}/${pendingIds.length})`;
                 try {
                     const res = await fetch(`${API_URL}/admin/approve`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ "交易編號": pendingIds[i], "動作": action, "點收幹部": adminName })
                     });
-                    const data = await res.json();
-                    if (data.成功) success++;
-                    await new Promise(r => setTimeout(r, 600)); // 🛑 保護 Google Sheets API 的呼吸間隔
+                    if ((await res.json()).成功) success++;
+                    await new Promise(r => setTimeout(r, 600)); // 保護 API 間隔
                 } catch (e) {}
             }
 
@@ -193,10 +206,9 @@
             loadTransactions();
         }
 
-        // 3. 單筆核准/駁回
         function processSingle(tid, action) {
             const adminName = localStorage.getItem('adminName');
-            if(!confirm(`確定要${action}此筆申請嗎？`)) return;
+            if(!confirm(`確定${action}此筆申請？`)) return;
             fetch(`${API_URL}/admin/approve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -204,7 +216,6 @@
             }).then(() => loadTransactions());
         }
 
-        // 4. 歸還
         function returnItem(tid, name) {
             if(!confirm(`確認點收「${name}」？`)) return;
             const adminName = localStorage.getItem('adminName');
@@ -215,26 +226,16 @@
             }).then(() => loadTransactions());
         }
 
-        // 5. 批量歸還
         function batchReturn() {
             const sid = document.getElementById('batchSid').value.trim();
-            const adminName = localStorage.getItem('adminName');
             if (!sid) return alert("請輸入學號");
             const btn = document.getElementById('batchBtn');
-            btn.innerText = "⏳ 處理中";
+            btn.innerText = "⏳";
             fetch(`${API_URL}/return_by_student`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ "學號": sid, "點收幹部": adminName })
-            }).then(() => { alert("批量點收完成"); loadTransactions(); btn.innerText = "全歸還"; });
-        }
-
-        function filterTable() {
-            const input = document.getElementById("searchInput").value.toUpperCase();
-            const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
-            for (let i = 0; i < rows.length; i++) {
-                rows[i].style.display = rows[i].innerText.toUpperCase().includes(input) ? "" : "none";
-            }
+                body: JSON.stringify({ "學號": sid, "點收幹部": localStorage.getItem('adminName') })
+            }).then(() => { loadTransactions(); btn.innerText = "全歸還"; });
         }
 
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
