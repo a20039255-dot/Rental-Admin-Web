@@ -3,55 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>設備部點收系統</title>
+    <title>設備部點收系統 - 管理後台</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
+
     <nav class="bg-gray-800 text-white p-4 shadow-xl">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="font-bold text-xl flex items-center">🛠️ 設備部後台 <span class="ml-3 px-2 py-1 bg-gray-700 rounded text-xs" id="adminTag"></span></h1>
-            <button onclick="location.href='index.html'" class="text-gray-400 hover:text-white">登出</button>
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="font-bold text-xl flex items-center">
+                <span class="bg-blue-600 p-1.5 rounded-lg mr-3">🛠️</span>
+                設備部管理系統 <span class="ml-3 px-2 py-1 bg-gray-700 rounded text-xs text-blue-300 border border-gray-600" id="adminTag">載入中...</span>
+            </h1>
+            <div class="flex items-center gap-4">
+                <span id="currentTime" class="hidden md:block text-gray-400 text-sm"></span>
+                <button onclick="logout()" class="text-gray-400 hover:text-white transition">登出</button>
+            </div>
         </div>
     </nav>
 
-    <div class="max-w-6xl mx-auto p-6">
-        <div class="bg-white rounded-2xl shadow-sm p-8">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-bold text-gray-800">目前借用中清單</h2>
-                <button onclick="loadTransactions()" class="text-blue-500 hover:rotate-180 transition duration-500">🔄 重新整理</button>
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">快速搜尋</h3>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">🔍</span>
+                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋學號、姓名或設備名稱..." 
+                        class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
             </div>
 
-            <div class="mb-6">
-                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜尋學號或姓名..." class="w-full md:w-64 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"><div class="mb-6 flex flex-col md:flex-row gap-4 items-end">
-    <div class="flex-1">
-        <label class="block text-sm text-gray-500 mb-1">搜尋學生</label>
-        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="輸入學號或姓名搜尋..." class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-    </div>
-    
-    <div class="flex gap-2">
-        <input type="text" id="batchSid" placeholder="輸入學號一次歸還" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-48">
-        <button onclick="batchReturn()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow transition">
-            學號批量歸還
-        </button>
-    </div>
-</div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <h3 class="text-sm font-bold text-indigo-500 mb-3 uppercase tracking-wider">學號批量點收</h3>
+                <div class="flex gap-2">
+                    <input type="text" id="batchSid" placeholder="輸入學號..." 
+                        class="flex-1 px-4 py-3 border border-indigo-100 bg-indigo-50 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-mono">
+                    <button onclick="batchReturn()" id="batchBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold shadow-md transition">
+                        全部歸還
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">目前借用中清單</h2>
+                    <p class="text-sm text-gray-500 mt-1">即時同步 Google Sheets 數據</p>
+                </div>
+                <button onclick="loadTransactions()" class="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition active:scale-95">
+                    <span id="refreshIcon">🔄</span> 重新整理
+                </button>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-gray-50 border-b">
-                            <th class="p-4 font-bold text-gray-600">交易編號</th>
-                            <th class="p-4 font-bold text-gray-600">借用人</th>
-                            <th class="p-4 font-bold text-gray-600">設備名稱</th>
-                            <th class="p-4 font-bold text-gray-600">借用時間</th>
-                            <th class="p-4 font-bold text-gray-600">狀態</th>
-                            <th class="p-4 font-bold text-gray-600">操作</th>
+                        <tr class="bg-gray-50 text-gray-400 text-xs uppercase tracking-widest border-b">
+                            <th class="p-4 font-bold">交易 ID</th>
+                            <th class="p-4 font-bold">借用人資訊</th>
+                            <th class="p-4 font-bold">借用設備</th>
+                            <th class="p-4 font-bold">借用時間</th>
+                            <th class="p-4 font-bold text-center">狀態</th>
+                            <th class="p-4 font-bold text-right">操作</th>
                         </tr>
                     </thead>
-                    <tbody id="transactionTable" class="divide-y">
+                    <tbody id="transactionTable" class="divide-y divide-gray-100">
                         </tbody>
                 </table>
+            </div>
+            
+            <div id="noData" class="hidden p-20 text-center">
+                <div class="text-5xl mb-4">🎉</div>
+                <p class="text-gray-400 font-medium">目前沒有任何待歸還設備</p>
             </div>
         </div>
     </div>
@@ -61,56 +90,84 @@
 
         window.onload = function() {
             const name = localStorage.getItem('adminName');
-            if(!name) window.location.href = 'index.html';
+            if(!name) {
+                alert("請先登入幹部帳號！");
+                window.location.href = 'index.html';
+                return;
+            }
             document.getElementById('adminTag').innerText = name;
             loadTransactions();
+            
+            // 每分鐘更新一次時間
+            setInterval(() => {
+                document.getElementById('currentTime').innerText = new Date().toLocaleString();
+            }, 1000);
         };
 
+        // 1. 抓取所有借用中交易
         function loadTransactions() {
             const table = document.getElementById('transactionTable');
-            table.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-400 animate-pulse">📡 正在從雲端抓取紀錄...</td></tr>';
+            const noData = document.getElementById('noData');
+            const refreshIcon = document.getElementById('refreshIcon');
+            
+            refreshIcon.classList.add('animate-spin');
+            table.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-400">📡 正在從 Google Sheets 讀取最新紀錄...</td></tr>';
 
             fetch(`${API_URL}/transactions`)
                 .then(res => res.json())
                 .then(data => {
+                    refreshIcon.classList.remove('animate-spin');
                     table.innerHTML = '';
-                    // 後端傳回來的 data 是個字典，我們轉成陣列來處理
                     const list = Object.values(data);
                     
                     if(list.length === 0) {
-                        table.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-400">目前沒有任何借用紀錄</td></tr>';
+                        noData.classList.remove('hidden');
                         return;
                     }
 
+                    noData.classList.add('hidden');
                     list.forEach(t => {
                         const tr = document.createElement('tr');
-                        tr.className = "hover:bg-gray-50 transition";
+                        tr.className = "hover:bg-blue-50/30 transition group";
                         tr.innerHTML = `
-                            <td class="p-4 font-mono text-sm">${t.交易編號}</td>
+                            <td class="p-4 font-mono text-xs text-gray-400">#${t.交易編號}</td>
                             <td class="p-4">
-                                <div class="font-bold">${t.租借人員姓名}</div>
-                                <div class="text-xs text-gray-400">${t.租借人員學號}</div>
+                                <div class="font-bold text-gray-800">${t.租借人員姓名}</div>
+                                <div class="text-xs text-gray-400 font-mono">${t.租借人員學號}</div>
                             </td>
-                            <td class="p-4 text-blue-600 font-medium">${t.設備名稱}</td>
-                            <td class="p-4 text-sm text-gray-500">${t.借用時間}</td>
                             <td class="p-4">
-                                <span class="px-2 py-1 rounded-full text-xs ${t.是否過期 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
-                                    ${t.是否過期 ? '已逾期' : '借用中'}
+                                <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-bold border border-blue-100">
+                                    ${t.設備名稱}
                                 </span>
                             </td>
                             <td class="p-4">
-                                <button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition">
+                                <div class="text-sm text-gray-600">${t.借用時間}</div>
+                                <div class="text-[10px] text-gray-400 mt-0.5">已借用 ${t.已借用天數} 天</div>
+                            </td>
+                            <td class="p-4 text-center">
+                                <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-tighter ${t.是否過期 ? 'bg-red-500 text-white animate-pulse' : 'bg-green-100 text-green-700'}">
+                                    ${t.是否過期 ? '⚠️ 已逾期' : '借用中'}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right">
+                                <button onclick="returnItem(${t.交易編號}, '${t.設備名稱}')" 
+                                    class="bg-white border border-gray-200 text-gray-700 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all duration-200 active:scale-95">
                                     點收歸還
                                 </button>
                             </td>
                         `;
                         table.appendChild(tr);
                     });
+                })
+                .catch(err => {
+                    refreshIcon.classList.remove('animate-spin');
+                    table.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-500 font-bold">❌ 無法連線至後端大腦</td></tr>`;
                 });
         }
 
+        // 2. 單筆歸還
         function returnItem(tid, name) {
-            if(!confirm(`確定要歸還「${name}」嗎？\n歸還後試算表庫存將自動 +1。`)) return;
+            if(!confirm(`確定要歸還「${name}」嗎？\n系統將自動增加試算表庫存並紀錄點收人。`)) return;
 
             const adminName = localStorage.getItem('adminName');
             
@@ -125,38 +182,22 @@
             .then(res => res.json())
             .then(data => {
                 if(data.成功) {
-                    alert("✅ 歸還成功！");
-                    loadTransactions(); // 重新整理表格
+                    loadTransactions(); 
                 } else {
                     alert("❌ 歸還失敗：" + data.訊息);
                 }
-            })
-            .catch(err => alert("連線錯誤"));
+            });
         }
 
-        function filterTable() {
-            const input = document.getElementById("searchInput").value.toUpperCase();
-            const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
-            for (let i = 0; i < rows.length; i++) {
-                const text = rows[i].innerText.toUpperCase();
-                rows[i].style.display = text.indexOf(input) > -1 ? "" : "none";
-            }
-        }
-        // 🚀 依學號批量歸還功能
+        // 3. 依學號批量歸還
         function batchReturn() {
             const sid = document.getElementById('batchSid').value.trim();
             const adminName = localStorage.getItem('adminName');
+            const btn = document.getElementById('batchBtn');
 
-            if (!sid) {
-                alert("請先輸入學號！");
-                return;
-            }
+            if (!sid) return alert("請輸入學號");
+            if (!confirm(`確定要將學號「${sid}」的所有借用設備一次點收歸還嗎？`)) return;
 
-            if (!confirm(`確定要將學號「${sid}」名下的所有設備一次歸還嗎？`)) return;
-
-            // 顯示讀取中，防止重複點擊
-            const btn = event.target;
-            const originalText = btn.innerText;
             btn.innerText = "⏳ 處理中...";
             btn.disabled = true;
 
@@ -171,21 +212,32 @@
             .then(res => res.json())
             .then(data => {
                 if (data.成功) {
-                    alert(`✅ 批量歸還成功！\n共處理了 ${data.歸還數量} 筆借用紀錄。`);
-                    document.getElementById('batchSid').value = ''; // 清空輸入框
-                    loadTransactions(); // 刷新表格
+                    alert(`✅ 批量點收成功！共處理 ${data.歸還數量} 筆紀錄。`);
+                    document.getElementById('batchSid').value = '';
+                    loadTransactions();
                 } else {
-                    alert("❌ 歸還失敗：" + data.訊息);
+                    alert("❌ 處理失敗：" + data.訊息);
                 }
             })
-            .catch(err => {
-                console.error("批量歸還出錯:", err);
-                alert("連線異常，請檢查後端狀態");
-            })
             .finally(() => {
-                btn.innerText = originalText;
+                btn.innerText = "全部歸還";
                 btn.disabled = false;
             });
+        }
+
+        // 4. 表格關鍵字篩選
+        function filterTable() {
+            const input = document.getElementById("searchInput").value.toUpperCase();
+            const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
+            for (let i = 0; i < rows.length; i++) {
+                const text = rows[i].innerText.toUpperCase();
+                rows[i].style.display = text.indexOf(input) > -1 ? "" : "none";
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
         }
     </script>
 </body>
