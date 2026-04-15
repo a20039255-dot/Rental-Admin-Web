@@ -3,48 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>設備部管理登入</title>
+    <title>設備部管理系統 - 登入</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #0f172a; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            /* 科技感深色漸層背景 */
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        
+        /* 錯誤時的震動動畫 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .error-shake { animation: shake 0.4s ease-in-out; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
 
-    <div class="bg-slate-800/50 p-8 rounded-[2.5rem] shadow-2xl border border-slate-700 w-full max-w-md backdrop-blur-xl">
-        <div class="text-center mb-10">
-            <div class="text-5xl mb-4">🔐</div>
-            <h1 class="text-2xl font-black text-white tracking-tight">設備部管理後台</h1>
-            <p class="text-slate-400 text-xs mt-2 font-bold uppercase tracking-widest">請輸入管理代號以進入系統</p>
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
+
+    <div id="loginCard" class="bg-slate-800/60 p-8 sm:p-10 rounded-[2rem] shadow-2xl border border-slate-700/50 w-full max-w-sm backdrop-blur-xl relative z-10 transition-all duration-300">
+        
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 mb-5">
+                <span class="text-3xl text-white">🛠️</span>
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-tight">設備管理後台</h1>
+            <p class="text-slate-400 text-xs mt-2 font-bold uppercase tracking-[0.2em]">Authorized Personnel Only</p>
         </div>
 
         <div class="space-y-6">
-            <div>
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">幹部代號</label>
-                <input type="password" id="adminCode" placeholder="••••••••" 
-                    class="w-full px-6 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition text-center tracking-[0.5em] font-mono">
+            <div class="relative">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">幹部專屬代號</label>
+                <div class="relative flex items-center">
+                    <input type="password" id="adminCode" autofocus placeholder="請輸入代號" 
+                        class="w-full pl-5 pr-12 py-4 bg-slate-900/80 border border-slate-700 rounded-2xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition font-mono tracking-widest text-sm shadow-inner">
+                    
+                    <button type="button" onclick="togglePassword()" class="absolute right-4 text-slate-400 hover:text-white transition outline-none p-2">
+                        <span id="eyeIcon" class="text-lg">👁️</span>
+                    </button>
+                </div>
+                <p id="errorMsg" class="text-rose-500 text-xs font-bold mt-2 ml-1 hidden transition-opacity">❌ 找不到此代號</p>
             </div>
 
-            <button onclick="login()" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-900/20 transition transform active:scale-95 text-sm tracking-widest">
-                進入管理系統
+            <button onclick="login()" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-600/20 transition-all transform active:scale-95 text-sm tracking-[0.2em] relative overflow-hidden group">
+                <span id="btnText" class="relative z-10">驗證登入</span>
+                <div class="absolute inset-0 h-full w-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
             </button>
         </div>
     </div>
 
+    <div class="mt-8 text-slate-500 text-[10px] font-mono tracking-widest relative z-10">
+        SYSTEM v2.0.0 © EQUIPMENT DEPT.
+    </div>
+
     <script>
-        // 🌟 確保這裡的 API_URL 是正確的 Cloud Run 網址
+        // 🌟 請換成你的真實 API 網址
         const API_URL = "https://student-api-174932950003.asia-east1.run.app";
 
+        // 👁️ 切換密碼顯示狀態
+        function togglePassword() {
+            const input = document.getElementById('adminCode');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                icon.innerText = '👁️';
+            }
+        }
+
+        // 觸發錯誤震動動畫
+        function triggerError(message) {
+            const card = document.getElementById('loginCard');
+            const errorMsg = document.getElementById('errorMsg');
+            
+            errorMsg.innerText = message;
+            errorMsg.classList.remove('hidden');
+            
+            // 觸發 CSS 震動
+            card.classList.remove('error-shake');
+            void card.offsetWidth; // 強制重繪 DOM
+            card.classList.add('error-shake');
+        }
+
+        // 🔐 登入邏輯
         async function login() {
             const codeInput = document.getElementById('adminCode');
             const btn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('btnText');
+            const errorMsg = document.getElementById('errorMsg');
             const code = codeInput.value.trim();
 
-            if (!code) return alert("請輸入代號！");
+            errorMsg.classList.add('hidden'); // 隱藏先前的錯誤
 
-            btn.innerText = "驗證中...";
+            if (!code) {
+                triggerError("❌ 請輸入代號！");
+                codeInput.focus();
+                return;
+            }
+
+            // 按鈕載入狀態
+            btnText.innerText = "連線驗證中...";
             btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
 
             try {
                 const res = await fetch(`${API_URL}/admin/login`, {
@@ -53,30 +121,35 @@
                     body: JSON.stringify({ "代號": code })
                 });
 
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || "後端拒絕連線");
-                }
+                if (!res.ok) throw new Error("後端拒絕連線 (404/500)");
 
                 const data = await res.json();
                 
                 if (data.成功) {
-                    // 登入成功，儲存姓名並跳轉
+                    btnText.innerText = "✅ 登入成功";
+                    btn.classList.replace('bg-blue-600', 'bg-emerald-500');
                     localStorage.setItem('adminName', data.姓名);
-                    window.location.href = 'admin.html';
+                    
+                    // 延遲 0.5 秒跳轉，讓使用者看到成功畫面
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 500);
                 } else {
-                    alert("登入失敗：" + data.訊息);
+                    triggerError("❌ 登入失敗：" + data.訊息);
                 }
             } catch (e) {
-                console.error("Login Error:", e);
-                alert("系統錯誤：\n1. 請檢查 API 網址是否正確\n2. 確保 Cloud Run 已啟動\n詳情：" + e.message);
+                console.error(e);
+                triggerError("❌ 系統異常：請確認 API 狀態");
             } finally {
-                btn.innerText = "進入管理系統";
-                btn.disabled = false;
+                if(btnText.innerText !== "✅ 登入成功") {
+                    btnText.innerText = "驗證登入";
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                }
             }
         }
 
-        // 支援按下 Enter 鍵登入
+        // 支援按下 Enter 鍵直接登入
         document.getElementById('adminCode').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') login();
         });
