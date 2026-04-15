@@ -3,62 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>設備管理系統 - 幹部登入</title>
+    <title>設備部管理登入</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #0f172a; }
+    </style>
 </head>
-<body class="bg-gray-900 flex items-center justify-center h-screen font-sans">
-    <div class="bg-gray-800 p-10 rounded-3xl shadow-2xl w-[420px] border border-gray-700">
-        <div class="text-5xl mb-6 text-center">🔐</div>
-        <h1 class="text-2xl font-bold text-white text-center mb-2">設備部管理後台</h1>
-        <p class="text-gray-400 text-center mb-8 text-sm">請輸入您的管理代號以進入系統</p>
-        
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-slate-800/50 p-8 rounded-[2.5rem] shadow-2xl border border-slate-700 w-full max-w-md backdrop-blur-xl">
+        <div class="text-center mb-10">
+            <div class="text-5xl mb-4">🔐</div>
+            <h1 class="text-2xl font-black text-white tracking-tight">設備部管理後台</h1>
+            <p class="text-slate-400 text-xs mt-2 font-bold uppercase tracking-widest">請輸入管理代號以進入系統</p>
+        </div>
+
         <div class="space-y-6">
             <div>
-                <label class="block text-gray-400 text-xs font-bold mb-2 uppercase tracking-widest">幹部代號</label>
-                <input type="password" id="adminCode" class="w-full px-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition text-center text-xl tracking-[1em]" placeholder="••••">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">幹部代號</label>
+                <input type="password" id="adminCode" placeholder="••••••••" 
+                    class="w-full px-6 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition text-center tracking-[0.5em] font-mono">
             </div>
-            <button onclick="adminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition duration-200 transform active:scale-95">
+
+            <button onclick="login()" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-900/20 transition transform active:scale-95 text-sm tracking-widest">
                 進入管理系統
             </button>
         </div>
     </div>
 
     <script>
+        // 🌟 確保這裡的 API_URL 是正確的 Cloud Run 網址
         const API_URL = "https://student-api-174932950003.asia-east1.run.app";
 
         async function login() {
-    const code = document.getElementById('adminCode').value;
-    const btn = document.querySelector('button');
-    btn.innerText = "驗證中...";
-    
-    try {
-        const res = await fetch(`${API_URL}/admin/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "代號": code })
-        });
-        
-        // 🌟 新增：如果 API 回傳 404 或 500
-        if (!res.ok) {
-            const errData = await res.json();
-            alert(`登入失敗 (${res.status}): ${errData.detail || '後端錯誤'}`);
-            return;
+            const codeInput = document.getElementById('adminCode');
+            const btn = document.getElementById('loginBtn');
+            const code = codeInput.value.trim();
+
+            if (!code) return alert("請輸入代號！");
+
+            btn.innerText = "驗證中...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "代號": code })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "後端拒絕連線");
+                }
+
+                const data = await res.json();
+                
+                if (data.成功) {
+                    // 登入成功，儲存姓名並跳轉
+                    localStorage.setItem('adminName', data.姓名);
+                    window.location.href = 'admin.html';
+                } else {
+                    alert("登入失敗：" + data.訊息);
+                }
+            } catch (e) {
+                console.error("Login Error:", e);
+                alert("系統錯誤：\n1. 請檢查 API 網址是否正確\n2. 確保 Cloud Run 已啟動\n詳情：" + e.message);
+            } finally {
+                btn.innerText = "進入管理系統";
+                btn.disabled = false;
+            }
         }
 
-        const data = await res.json();
-        if (data.成功) {
-            localStorage.setItem('adminName', data.姓名);
-            window.location.href = 'admin.html';
-        } else {
-            alert("登入失敗：" + data.訊息);
-        }
-    } catch (e) {
-        // 🌟 這裡會抓到連不上的錯誤
-        alert("連線失敗：請確認後端 API 是否正常運作！\n錯誤訊息：" + e.message);
-    } finally {
-        btn.innerText = "進入管理系統";
-    }
-}
+        // 支援按下 Enter 鍵登入
+        document.getElementById('adminCode').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') login();
+        });
     </script>
 </body>
 </html>
