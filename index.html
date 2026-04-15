@@ -26,27 +26,39 @@
     <script>
         const API_URL = "https://student-api-174932950003.asia-east1.run.app";
 
-        function adminLogin() {
-            const code = document.getElementById('adminCode').value;
-            if(!code) return alert("請輸入代號");
-
-            fetch(`${API_URL}/admin/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ "幹部代號": code })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.成功) {
-                    localStorage.setItem('adminName', data.名稱);
-                    localStorage.setItem('adminRole', data.職位);
-                    window.location.href = 'admin.html';
-                } else {
-                    alert("登入失敗：" + data.訊息);
-                }
-            })
-            .catch(err => alert("後端 API 連線異常，請確認 Cloud Run 是否正常。"));
+        async function login() {
+    const code = document.getElementById('adminCode').value;
+    const btn = document.querySelector('button');
+    btn.innerText = "驗證中...";
+    
+    try {
+        const res = await fetch(`${API_URL}/admin/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ "代號": code })
+        });
+        
+        // 🌟 新增：如果 API 回傳 404 或 500
+        if (!res.ok) {
+            const errData = await res.json();
+            alert(`登入失敗 (${res.status}): ${errData.detail || '後端錯誤'}`);
+            return;
         }
+
+        const data = await res.json();
+        if (data.成功) {
+            localStorage.setItem('adminName', data.姓名);
+            window.location.href = 'admin.html';
+        } else {
+            alert("登入失敗：" + data.訊息);
+        }
+    } catch (e) {
+        // 🌟 這裡會抓到連不上的錯誤
+        alert("連線失敗：請確認後端 API 是否正常運作！\n錯誤訊息：" + e.message);
+    } finally {
+        btn.innerText = "進入管理系統";
+    }
+}
     </script>
 </body>
 </html>
