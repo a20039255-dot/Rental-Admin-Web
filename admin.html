@@ -135,7 +135,9 @@
                     const isPending = t.狀態 === "待審核";
                     const isBorrowing = t.狀態 === "借用中";
                     
-                    // 🌟 逾期計算邏輯 (14天)
+                    // 🌟 逾期計算邏輯
+                    const MAX_DAYS = 14; // ⬅️ 部長，以後要改天數，直接改這個數字就好！(例如改成 7 天)
+                    
                     let isOverdue = false;
                     let overdueDays = 0;
                     if (isBorrowing && t.借用時間) {
@@ -143,9 +145,9 @@
                         bDate.setHours(0, 0, 0, 0);
                         const diffDays = Math.floor((today - bDate) / (1000 * 60 * 60 * 24));
                         
-                        if (diffDays > 14) {
+                        if (diffDays > MAX_DAYS) {
                             isOverdue = true;
-                            overdueDays = diffDays - 14;
+                            overdueDays = diffDays - MAX_DAYS;
                         }
                     }
 
