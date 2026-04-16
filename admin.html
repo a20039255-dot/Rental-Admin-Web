@@ -184,35 +184,56 @@
             document.getElementById('filteredCount').innerText = pendingCount;
         }
 
-        // 3. 批量核准/駁回
+// 3. 🌟 升級版：批量核准/駁回 (單次請求聚合)
         async function processFiltered(action) {
             const pendingIds = [];
             const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
+            
+            // 收集所有畫面上顯示且待審核的 ID
             for (let row of rows) {
                 if (row.style.display !== "none" && row.innerText.includes("待審核")) {
                     const tid = row.cells[0].innerText.replace(/[^0-9]/g, '').trim();
-                    if(tid) pendingIds.push(tid);
+                    if(tid) pendingIds.push(parseInt(tid));
                 }
             }
+            
             if (pendingIds.length === 0) return alert("目前畫面上沒有可處理的申請件！");
-            if (!confirm(`確認針對目前顯示的 ${pendingIds.length} 筆執行「${action}」嗎？`)) return;
+            if (!confirm(`確認針對目前顯示的 ${pendingIds.length} 筆執行「${action}」嗎？\n(伺服器處理需要幾秒鐘，請稍候)`)) return;
 
             const btn = action === '核准' ? document.getElementById('btnFilterApprove') : document.getElementById('btnFilterReject');
             const originalText = btn.innerText;
+            
+            // 變更按鈕狀態為處理中
+            btn.innerText = "⏳ 伺服器努力處理中...";
             btn.classList.add('btn-processing');
 
-            for (let i = 0; i < pendingIds.length; i++) {
-                btn.innerText = `⏳ (${i+1}/${pendingIds.length})`;
-                await fetch(`${API_URL}/admin/approve`, {
+            try {
+                // 🌟 將 30 次請求，合併為「1 次」陣列請求！
+                const res = await fetch(`${API_URL}/admin/approve_batch`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "交易編號": pendingIds[i], "動作": action, "點收幹部": localStorage.getItem('adminName') })
+                    body: JSON.stringify({ 
+                        "交易編號清單": pendingIds, 
+                        "動作": action, 
+                        "點收幹部": localStorage.getItem('adminName') 
+                    })
                 });
-                await new Promise(r => setTimeout(r, 600)); 
+                
+                const data = await res.json();
+                if(data.成功) {
+                    alert(`✅ 批量處理成功！共順利過帳 ${data.處理數量} 筆。`);
+                } else {
+                    alert("❌ 處理失敗：" + data.訊息);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("❌ 連線異常或處理逾時，請重新整理網頁後確認是否已處理成功。");
+            } finally {
+                // 復原按鈕並重新載入清單
+                btn.innerText = originalText;
+                btn.classList.remove('btn-processing');
+                loadTransactions();
             }
-            btn.innerText = originalText;
-            btn.classList.remove('btn-processing');
-            loadTransactions();
         }
 
         // 4. 單筆操作
