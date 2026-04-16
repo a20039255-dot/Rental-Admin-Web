@@ -102,7 +102,6 @@
             loadTransactions();
         };
 
-        // 1. 🌟 載入紀錄 (已經確保加上了 async)
         // 1. 🌟 載入紀錄 (支援 14 天逾期紅燈警示)
         async function loadTransactions() {
             const table = document.getElementById('transactionTable');
@@ -111,12 +110,21 @@
             table.innerHTML = '<tr><td colspan="5" class="p-20 text-center text-slate-300 font-bold animate-pulse">📡 資料同步中...</td></tr>';
 
             try {
-                const res = await fetch(`${API_URL}/transactions`);
-                if(!res.ok) throw new Error("API連線失敗");
-                const data = await res.json();
+                // 🌟 同時向後端要「交易紀錄」和「系統設定」
+                const [res, setRes] = await Promise.all([
+                    fetch(`${API_URL}/transactions`),
+                    fetch(`${API_URL}/settings`)
+                ]);
                 
+                if(!res.ok) throw new Error("API連線失敗");
+                
+                const data = await res.json();
+                const settingsData = await setRes.json();
+                
+                // 🌟 從試算表拿天數，如果試算表沒填或出錯，就預設給 14 天防呆
+                const MAX_DAYS = parseInt(settingsData['借用天數限制']) || 14; 
+
                 refreshIcon.classList.remove('animate-spin');
-                table.innerHTML = '';
                 
                 const list = Object.values(data)
                     .filter(t => t.狀態 !== "已歸還" && t.狀態 !== "已駁回")
