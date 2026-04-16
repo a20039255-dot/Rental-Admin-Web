@@ -118,9 +118,10 @@
                 table.innerHTML = '';
                 
                 // 🌟 隱藏「已歸還」與「已駁回」的紀錄，保持畫面清爽
+               // 🌟 改為正序 (a - b)
                 const list = Object.values(data)
                     .filter(t => t.狀態 !== "已歸還" && t.狀態 !== "已駁回")
-                    .sort((a, b) => b.交易編號 - a.交易編號);
+                    .sort((a, b) => a.交易編號 - b.交易編號);
                 
                 if(list.length === 0) { 
                     document.getElementById('noData').classList.remove('hidden'); 
