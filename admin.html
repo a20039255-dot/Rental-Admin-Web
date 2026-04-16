@@ -27,7 +27,6 @@
     <div class="max-w-7xl mx-auto p-4 md:p-8">
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            
             <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                 <h3 class="text-[10px] font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">精準搜尋與批量決策</h3>
                 <div class="relative mb-4">
@@ -102,7 +101,7 @@
             loadTransactions();
         };
 
-        // 1. 🌟 載入紀錄 (支援 14 天逾期紅燈警示)
+        // 1. 載入紀錄 (支援動態天數與逾期紅燈)
         async function loadTransactions() {
             const table = document.getElementById('transactionTable');
             const refreshIcon = document.getElementById('refreshIcon');
@@ -110,7 +109,7 @@
             table.innerHTML = '<tr><td colspan="5" class="p-20 text-center text-slate-300 font-bold animate-pulse">📡 資料同步中...</td></tr>';
 
             try {
-                // 🌟 同時向後端要「交易紀錄」和「系統設定」
+                // 同時請求紀錄與設定檔
                 const [res, setRes] = await Promise.all([
                     fetch(`${API_URL}/transactions`),
                     fetch(`${API_URL}/settings`)
@@ -121,10 +120,11 @@
                 const data = await res.json();
                 const settingsData = await setRes.json();
                 
-                // 🌟 從試算表拿天數，如果試算表沒填或出錯，就預設給 14 天防呆
+                // 動態抓取借用天數限制
                 const MAX_DAYS = parseInt(settingsData['借用天數限制']) || 14; 
 
                 refreshIcon.classList.remove('animate-spin');
+                table.innerHTML = '';
                 
                 const list = Object.values(data)
                     .filter(t => t.狀態 !== "已歸還" && t.狀態 !== "已駁回")
@@ -137,15 +137,13 @@
                 document.getElementById('noData').classList.add('hidden');
 
                 const today = new Date();
-                today.setHours(0, 0, 0, 0); // 將時間歸零，只算天數
+                today.setHours(0, 0, 0, 0);
 
                 list.forEach(t => {
                     const isPending = t.狀態 === "待審核";
                     const isBorrowing = t.狀態 === "借用中";
                     
-                    // 🌟 逾期計算邏輯
-                    const MAX_DAYS = 14; // ⬅️ 部長，以後要改天數，直接改這個數字就好！(例如改成 7 天)
-                    
+                    // 逾期計算
                     let isOverdue = false;
                     let overdueDays = 0;
                     if (isBorrowing && t.借用時間) {
@@ -161,12 +159,10 @@
 
                     const tr = document.createElement('tr');
                     
-                    // 🌟 逾期時，整行背景變成紅色警告
                     if (isPending) tr.className = "pending-row bg-amber-50/40 transition hover:bg-amber-50";
                     else if (isOverdue) tr.className = "border-l-4 border-rose-500 bg-rose-50/70 transition hover:bg-rose-100";
                     else tr.className = "hover:bg-slate-50 transition";
                     
-                    // 🌟 狀態標籤切換
                     let statusHtml = "";
                     if (isPending) {
                         statusHtml = `<span class="px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border bg-amber-100 text-amber-700 border-amber-200">${t.狀態}</span>`;
@@ -228,73 +224,51 @@
             document.getElementById('filteredCount').innerText = pendingCount;
         }
 
-// 3. 🌟 升級版：批量核准/駁回 (單次請求聚合)
+        // 3. 批量審核 (極速打包寫入)
         async function processFiltered(action) {
             const pendingIds = [];
             const rows = document.getElementById("transactionTable").getElementsByTagName("tr");
-            
-            // 收集所有畫面上顯示且待審核的 ID
             for (let row of rows) {
                 if (row.style.display !== "none" && row.innerText.includes("待審核")) {
                     const tid = row.cells[0].innerText.replace(/[^0-9]/g, '').trim();
                     if(tid) pendingIds.push(parseInt(tid));
                 }
             }
-            
             if (pendingIds.length === 0) return alert("目前畫面上沒有可處理的申請件！");
-            if (!confirm(`確認針對目前顯示的 ${pendingIds.length} 筆執行「${action}」嗎？\n(伺服器處理需要幾秒鐘，請稍候)`)) return;
+            if (!confirm(`確認針對目前顯示的 ${pendingIds.length} 筆執行「${action}」嗎？`)) return;
 
             const btn = action === '核准' ? document.getElementById('btnFilterApprove') : document.getElementById('btnFilterReject');
             const originalText = btn.innerText;
-            
-            // 變更按鈕狀態為處理中
             btn.innerText = "⏳ 伺服器努力處理中...";
             btn.classList.add('btn-processing');
 
             try {
-                // 🌟 將 30 次請求，合併為「1 次」陣列請求！
                 const res = await fetch(`${API_URL}/admin/approve_batch`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        "交易編號清單": pendingIds, 
-                        "動作": action, 
-                        "點收幹部": localStorage.getItem('adminName') 
-                    })
+                    body: JSON.stringify({ "交易編號清單": pendingIds, "動作": action, "點收幹部": localStorage.getItem('adminName') })
                 });
-                
                 const data = await res.json();
-                if(data.成功) {
-                    alert(`✅ 批量處理成功！共順利過帳 ${data.處理數量} 筆。`);
-                } else {
-                    alert("❌ 處理失敗：" + data.訊息);
-                }
+                if(data.成功) alert(`✅ 批量處理成功！共過帳 ${data.處理數量} 筆。`);
+                else alert("❌ 處理失敗：" + data.訊息);
             } catch (e) {
-                console.error(e);
-                alert("❌ 連線異常或處理逾時，請重新整理網頁後確認是否已處理成功。");
+                console.error(e); alert("❌ 連線異常，請重新整理確認。");
             } finally {
-                // 復原按鈕並重新載入清單
                 btn.innerText = originalText;
                 btn.classList.remove('btn-processing');
                 loadTransactions();
             }
         }
 
-       // 4. 單筆操作 (🌟 修復：改走極速批量通道)
+        // 4. 單筆操作 (共用極速通道)
         function processSingle(tid, action) {
             if(!confirm(`確定要${action}此筆申請？`)) return;
-            
-            // 將單一的 tid 包裝成陣列 [tid]，直接送給 approve_batch 處理
             fetch(`${API_URL}/admin/approve_batch`, {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    "交易編號清單": [tid], 
-                    "動作": action, 
-                    "點收幹部": localStorage.getItem('adminName') 
-                })
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "交易編號清單": [tid], "動作": action, "點收幹部": localStorage.getItem('adminName') })
             }).then(() => loadTransactions());
         }
+
         function returnItem(tid, name) {
             if(!confirm(`確認點收歸還「${name}」？`)) return;
             fetch(`${API_URL}/return`, {
@@ -306,11 +280,10 @@
         // 5. 末三碼批量歸還
         function batchReturn() {
             const sid = document.getElementById('batchSid').value.trim();
-            if (sid.length < 3) return alert("部長，為了避免誤刷，請輸入學號「末三碼」喔！");
+            if (sid.length < 3) return alert("請輸入學號「末三碼」喔！");
             
             const btn = document.getElementById('batchBtn');
-            btn.innerText = "⏳ 處理中...";
-            btn.disabled = true;
+            btn.innerText = "⏳ 處理中..."; btn.disabled = true;
 
             fetch(`${API_URL}/return_by_student`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -320,11 +293,8 @@
                     alert(`✅ 點收成功！已自動處理 ${data.歸還數量} 件設備。`);
                     document.getElementById('batchSid').value = '';
                     loadTransactions();
-                } else alert("❌ 找不到該同學的借用紀錄");
-            }).finally(() => { 
-                btn.innerText = "全歸還"; 
-                btn.disabled = false;
-            });
+                } else alert("❌ 找不到該同學的未結案借用紀錄");
+            }).finally(() => { btn.innerText = "全歸還"; btn.disabled = false; });
         }
 
         document.getElementById('batchSid').addEventListener('keypress', function (e) {
