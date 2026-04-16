@@ -237,15 +237,21 @@
             }
         }
 
-        // 4. 單筆操作
+       // 4. 單筆操作 (🌟 修復：改走極速批量通道)
         function processSingle(tid, action) {
             if(!confirm(`確定要${action}此筆申請？`)) return;
-            fetch(`${API_URL}/admin/approve`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ "交易編號": tid, "動作": action, "點收幹部": localStorage.getItem('adminName') })
+            
+            // 將單一的 tid 包裝成陣列 [tid]，直接送給 approve_batch 處理
+            fetch(`${API_URL}/admin/approve_batch`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    "交易編號清單": [tid], 
+                    "動作": action, 
+                    "點收幹部": localStorage.getItem('adminName') 
+                })
             }).then(() => loadTransactions());
         }
-
         function returnItem(tid, name) {
             if(!confirm(`確認點收歸還「${name}」？`)) return;
             fetch(`${API_URL}/return`, {
