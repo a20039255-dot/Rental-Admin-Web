@@ -103,6 +103,7 @@
         };
 
         // 1. 🌟 載入紀錄 (已經確保加上了 async)
+        // 1. 🌟 載入紀錄 (支援 14 天逾期紅燈警示)
         async function loadTransactions() {
             const table = document.getElementById('transactionTable');
             const refreshIcon = document.getElementById('refreshIcon');
@@ -117,8 +118,6 @@
                 refreshIcon.classList.remove('animate-spin');
                 table.innerHTML = '';
                 
-                // 🌟 隱藏「已歸還」與「已駁回」的紀錄，保持畫面清爽
-               // 🌟 改為正序 (a - b)
                 const list = Object.values(data)
                     .filter(t => t.狀態 !== "已歸還" && t.狀態 !== "已駁回")
                     .sort((a, b) => a.交易編號 - b.交易編號);
@@ -129,11 +128,47 @@
                 }
                 document.getElementById('noData').classList.add('hidden');
 
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // 將時間歸零，只算天數
+
                 list.forEach(t => {
                     const isPending = t.狀態 === "待審核";
-                    const tr = document.createElement('tr');
-                    tr.className = isPending ? "pending-row bg-amber-50/40 transition hover:bg-amber-50" : "hover:bg-slate-50 transition";
+                    const isBorrowing = t.狀態 === "借用中";
                     
+                    // 🌟 逾期計算邏輯 (14天)
+                    let isOverdue = false;
+                    let overdueDays = 0;
+                    if (isBorrowing && t.借用時間) {
+                        const bDate = new Date(t.借用時間.replace(/-/g, '/'));
+                        bDate.setHours(0, 0, 0, 0);
+                        const diffDays = Math.floor((today - bDate) / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays > 14) {
+                            isOverdue = true;
+                            overdueDays = diffDays - 14;
+                        }
+                    }
+
+                    const tr = document.createElement('tr');
+                    
+                    // 🌟 逾期時，整行背景變成紅色警告
+                    if (isPending) tr.className = "pending-row bg-amber-50/40 transition hover:bg-amber-50";
+                    else if (isOverdue) tr.className = "border-l-4 border-rose-500 bg-rose-50/70 transition hover:bg-rose-100";
+                    else tr.className = "hover:bg-slate-50 transition";
+                    
+                    // 🌟 狀態標籤切換
+                    let statusHtml = "";
+                    if (isPending) {
+                        statusHtml = `<span class="px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border bg-amber-100 text-amber-700 border-amber-200">${t.狀態}</span>`;
+                    } else if (isOverdue) {
+                        statusHtml = `
+                            <span class="px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border bg-rose-100 text-rose-700 border-rose-200">${t.狀態}</span>
+                            <div class="mt-2"><span class="bg-rose-500 text-white px-2 py-1 rounded shadow-sm text-[9px] font-bold animate-pulse inline-block">⚠️ 逾期 ${overdueDays} 天</span></div>
+                        `;
+                    } else {
+                        statusHtml = `<span class="px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border bg-blue-100 text-blue-700 border-blue-200">${t.狀態}</span>`;
+                    }
+
                     tr.innerHTML = `
                         <td class="p-6 font-mono text-[10px] text-slate-300">#${t.交易編號}</td>
                         <td class="p-6">
@@ -142,12 +177,10 @@
                         </td>
                         <td class="p-6">
                             <span class="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-black text-slate-600 shadow-sm">${t.設備名稱}</span>
-                            <div class="text-[9px] text-slate-400 mt-1.5 font-mono italic pl-1">借：${t.借用時間}</div>
+                            <div class="text-[9px] ${isOverdue ? 'text-rose-400 font-bold' : 'text-slate-400'} mt-1.5 font-mono italic pl-1">借：${t.借用時間}</div>
                         </td>
                         <td class="p-6 text-center">
-                            <span class="px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${isPending ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-blue-100 text-blue-700 border-blue-200'}">
-                                ${t.狀態}
-                            </span>
+                            ${statusHtml}
                             <div class="text-[9px] text-slate-400 mt-2 font-black italic">處理人: <span class="${isPending?'text-slate-300':'text-blue-500'}">${t.處理人員||'未處理'}</span></div>
                         </td>
                         <td class="p-6 text-right pr-8 space-x-2">
